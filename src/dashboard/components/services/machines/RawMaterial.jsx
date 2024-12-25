@@ -97,7 +97,7 @@ const RawMaterialOffering = () => {
             Authorization: `Bearer ${cookies.token}`,
           },
         });
-
+        
         if (response.data.success) {
           const data = response.data.data;
           setCategories(data.rawMaterialCategory); // Assuming rawMaterialCategory is an array of strings
