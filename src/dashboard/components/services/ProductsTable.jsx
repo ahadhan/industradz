@@ -2,10 +2,13 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import AddServiceButton from "./AddServiceButton";
+import { useSelector, useDispatch } from "react-redux";
+import { openModal, closeModal } from "../../../slices/modalSlice";
 
 const ProductsTable = () => {
   const [services, setServices] = useState([]); // State to hold added services
-
+  const isModalOpen = useSelector((state) => state.modal.isModalOpen);
+  const dispatch = useDispatch();
   // Handler to add a service
   const handleAddService = (newService) => {
     setServices((prevServices) => [...prevServices, newService]);
@@ -18,7 +21,7 @@ const ProductsTable = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
     >
-      <div className="flex justify-between items-center mb-6">
+      <div className={`flex justify-between items-center mb-6 ${isModalOpen ? "flex-col" : "flex-row"} `}>
         <h2 className="text-xl font-semibold">My Services</h2>
         <AddServiceButton onAddService={handleAddService} />
       </div>

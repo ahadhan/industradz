@@ -13,7 +13,10 @@ import IndustrailMachines from './pages/IndustrialMachines'
 import RawMatrials from './pages/RawMatrials'
 import SpareParts from './pages/SpareParts'
 import ProfileCreation from "./pages/ProfileCreation";
-import AddService from "./dashboard/components/services/AddService";
+import AddService from "./dashboard/components/services/AddIndustrialService";
+import IndustrialMachinesOffering from "./dashboard/components/services/machines/IndustrialMachinedOfferings";
+import SparePartsOffering from "./dashboard/components/services/machines/SpareParts";
+import RawMaterial from "./dashboard/components/services/machines/RawMaterial";
 
 
 function App() {
@@ -31,7 +34,9 @@ function App() {
 					<Route path="/dashboard" element={<OverviewPage />} />
 					<Route path="/dashboard/services" element={<ProductsPage />} />
 					<Route path="/dashboard/addservices" element={<AddService />} />
-					<Route path="/dashboard/bookings" element={<OrdersPage />} />
+					<Route path="/dashboard/addservices/industrial-machines" element={<IndustrialMachinesOffering />} />
+					<Route path="/dashboard/addservices/spare-parts" element={<SparePartsOffering />} />
+					<Route path="/dashboard/addservices/raw-material" element={<RawMaterial />} />
 					<Route path="/dashboard/sales" element={<SalesPage />} />
 					<Route path="/dashboard/profile" element={<ProfileSection />} />
 					<Route path="/dashboard/notifications" element={<NotificationPage />} />

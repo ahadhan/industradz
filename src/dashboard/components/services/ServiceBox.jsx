@@ -3,14 +3,15 @@ import { Trash2, Edit, Search } from "lucide-react";
 import CategoryDropdown from "./CategoryDropdown";
 import { motion } from "framer-motion";
 import AddServiceButton from "./AddServiceButton";
+import { useSelector, useDispatch } from "react-redux";
+import { openModal, closeModal } from "../../../slices/modalSlice";
 
 const ServiceBox = () => {
+    const isModalOpen = useSelector((state) => state.modal.isModalOpen);
+    const dispatch = useDispatch();
 
-    
     const [searchTerm, setSearchTerm] = useState("");
     const [filteredServices, setFilteredServices] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [serviceTypeModal, setServiceTypeModal] = useState(false);
     const [newService, setNewService] = useState({
         id: null,
         name: "",
@@ -80,7 +81,7 @@ const ServiceBox = () => {
             revenue: "",
         });
         setIsEditing(false);
-        setIsModalOpen(true);
+        dispatch(openModal()); // Open the modal via Redux
     };
 
     const handleSaveService = async () => {
@@ -107,12 +108,12 @@ const ServiceBox = () => {
             setFilteredServices((prev) =>
                 isEditing
                     ? prev.map((service) =>
-                          service.id === savedService.id ? savedService : service
-                      )
+                        service.id === savedService.id ? savedService : service
+                    )
                     : [...prev, savedService]
             );
 
-            setIsModalOpen(false);
+            dispatch(closeModal()); // Close the modal via Redux
             setIsEditing(false);
             setNewService({
                 id: null,
@@ -130,20 +131,20 @@ const ServiceBox = () => {
     const handleEditService = (service) => {
         setNewService(service);
         setIsEditing(true);
-        setIsModalOpen(true);
+        dispatch(openModal()); // Open the modal via Redux
     };
 
     return (
-        <div className="p-6 mt-6 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl border border-gray-700">
+        <div className="p-6 mt-6 bg-opacity-50 backdrop-blur-md shadow-lg rounded-xl border border-gray-700 ">
             {/* Header */}
             <motion.div
-                className="flex justify-between items-center mb-6"
+                className={`flex justify-between items-center mb-6`}
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
             >
                 <h2 className="text-xl font-semibold">My Services</h2>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center justify-center gap-4">
                     <input
                         type="text"
                         className="border rounded-2xl px-4 py-2"
@@ -266,7 +267,7 @@ const ServiceBox = () => {
                         <div className="flex justify-end mt-4">
                             <button
                                 className="bg-gray-500 text-white px-4 py-2 rounded-2xl mr-2"
-                                onClick={() => setIsModalOpen(false)}
+                                onClick={() => dispatch(closeModal())}
                             >
                                 Cancel
                             </button>
@@ -275,37 +276,6 @@ const ServiceBox = () => {
                                 onClick={handleSaveService}
                             >
                                 Save
-                            </button>
-                        </div>
-                    </div>
-                </motion.div>
-            )}
-
-            {/* Delete Confirmation Modal */}
-            {isDeleteModalOpen && (
-                <motion.div
-                    className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                >
-                    <div className="bg-white p-6 rounded-lg shadow-lg">
-                        <h3 className="text-lg font-semibold mb-4">
-                            Confirm Delete
-                        </h3>
-                        <p>Are you sure you want to delete this service?</p>
-                        <div className="flex justify-end mt-4">
-                            <button
-                                className="bg-gray-500 text-white px-4 py-2 rounded-2xl mr-2"
-                                onClick={() => setIsDeleteModalOpen(false)}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                className="bg-red-500 text-white px-4 py-2 rounded-2xl"
-                                onClick={confirmDeleteService}
-                            >
-                                Delete
                             </button>
                         </div>
                     </div>
