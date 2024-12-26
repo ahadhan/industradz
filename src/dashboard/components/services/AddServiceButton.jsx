@@ -107,7 +107,7 @@ const AddServiceButton = () => {
     if (option === "Marketplace") {
       setCurrentView("marketplace"); // Switch to marketplace sub-options
     } else {
-      navigate(`/dashboard/addservices`);
+      navigate(`/dashboard/addIndustrialService`);
       dispatch(closeModal()); // Close modal after navigation
     }
   };

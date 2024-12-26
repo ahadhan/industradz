@@ -37,11 +37,6 @@ const ProfileCreation = () => {
       youtube: "",
     },
     certifications: [],
-    workingHours: {
-      working_days: [],
-      working_start_time: "",
-      working_end_time: "",
-    },
     subscriptionPlan: "Basic",
     noOfOrders: 0,
   });
@@ -57,7 +52,7 @@ const ProfileCreation = () => {
   const [cookies] = useCookies(["token"]);
   const token = cookies.token;
 
-  const { data, load, error } = useSelector((state) => state.dynamicFields);
+  const { data, load } = useSelector((state) => state.dynamicFields);
   const certifications = data?.certifications;
 
   useEffect(() => {
@@ -96,7 +91,6 @@ const ProfileCreation = () => {
     setShowCustomInput(checked);
 
     if (!checked) {
-      // Remove "Other" from certifications if unchecked
       setFormData((prev) => ({
         ...prev,
         certifications: prev.certifications.filter((c) => c !== customValue),
@@ -120,35 +114,23 @@ const ProfileCreation = () => {
     });
   };
 
-  const daysOptions = [
-    { value: "Monday", label: "Monday" },
-    { value: "Tuesday", label: "Tuesday" },
-    { value: "Wednesday", label: "Wednesday" },
-    { value: "Thursday", label: "Thursday" },
-    { value: "Friday", label: "Friday" },
-    { value: "Saturday", label: "Saturday" },
-    { value: "Sunday", label: "Sunday" },
-  ];
-
   const handleChange = (e) => {
     const { name, value, type } = e.target;
 
     if (type === "number") {
-      // Parse the value as a number
       setFormData((prev) => ({
         ...prev,
-        [name]: value === "" ? "" : parseInt(value, 10), // Handle empty input gracefully
+        [name]: value === "" ? "" : parseInt(value, 10),
       }));
     } else if (name === "phoneNumber1" || name === "phoneNumber2") {
-      // Handle phone number updates
-      const index = name === "phoneNumber1" ? 0 : 1; // Determine the index for phoneNumbers
+      const index = name === "phoneNumber1" ? 0 : 1;
       setFormData((prev) => ({
         ...prev,
         contact_info: {
           ...prev.contact_info,
           phoneNumbers: [
             ...prev.contact_info.phoneNumbers.slice(0, index),
-            value, // Update the specific index
+            value,
             ...prev.contact_info.phoneNumbers.slice(index + 1),
           ],
         },
@@ -163,7 +145,6 @@ const ProfileCreation = () => {
         "youtube",
       ].includes(name)
     ) {
-      // Handle other contact_info fields
       setFormData((prev) => ({
         ...prev,
         contact_info: {
@@ -172,7 +153,6 @@ const ProfileCreation = () => {
         },
       }));
     } else {
-      // Handle all other fields
       setFormData((prev) => ({
         ...prev,
         [name]: value,
@@ -184,19 +164,16 @@ const ProfileCreation = () => {
     const file = e.target.files[0];
 
     if (file) {
-      // Generate a preview URL for display
       const previewUrl = URL.createObjectURL(file);
 
-      // Update file previews for display
       setFilePreviews((prev) => ({
         ...prev,
         [field]: previewUrl,
       }));
 
-      // Store the file in formData
       setFormData((prev) => ({
         ...prev,
-        [field]: file, // Store the File object for backend processing
+        [field]: file,
       }));
     }
   };
@@ -206,54 +183,18 @@ const ProfileCreation = () => {
       ...prev,
       location: {
         ...prev.location,
-        coordinates, // Update the coordinates array
+        coordinates,
       },
     }));
-  };
-
-  const handleWorkingHoursChange = (selectedOptions) => {
-    setFormData((prev) => ({
-      ...prev,
-      workingHours: {
-        ...prev.workingHours,
-        working_days: selectedOptions
-          ? selectedOptions.map((option) => option.value)
-          : [],
-      },
-    }));
-  };
-
-  const handleTimeChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      workingHours: {
-        ...prev.workingHours,
-        [name]: value, // Update working_start_time or working_end_time dynamically
-      },
-    }));
-  };
-
-  // Helper function to convert 24-hour time to 12-hour format
-  const convertTo12HourFormat = (time) => {
-    if (!time) return "";
-    const [hour, minute] = time.split(":");
-    let hourInt = parseInt(hour, 10);
-    const ampm = hourInt >= 12 ? "PM" : "AM";
-    hourInt = hourInt % 12 === 0 ? 12 : hourInt % 12;
-    return `${hourInt}${ampm}`;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    console.log("Form Data Before Transformation:", formData);
 
     try {
       const formDataToSubmit = new FormData();
 
-      // Append simple fields
       formDataToSubmit.append("businessName", formData.businessName);
       formDataToSubmit.append("businessType", formData.businessType);
       formDataToSubmit.append(
@@ -262,30 +203,16 @@ const ProfileCreation = () => {
       );
       formDataToSubmit.append("expertise_level", formData.expertise_level);
       formDataToSubmit.append("description", formData.description);
-
-      // Construct workingHours as a string
-      const { working_days, working_start_time, working_end_time } =
-        formData.workingHours;
-      let workingHoursString = "";
-      if (working_days.length > 0 && working_start_time && working_end_time) {
-        workingHoursString = `${working_days.join("-")}: ${convertTo12HourFormat(
-          working_start_time
-        )}-${convertTo12HourFormat(working_end_time)}`;
-      }
-      formDataToSubmit.append("workingHours", workingHoursString);
-
       formDataToSubmit.append(
         "subscriptionPlan",
         formData.subscriptionPlan || "Basic"
       );
       formDataToSubmit.append("noOfOrders", formData.noOfOrders || 0);
 
-      // Append certifications as multiple fields
       formData.certifications.forEach((cert) => {
         formDataToSubmit.append("certifications", cert);
       });
 
-      // Append contact_info fields
       formData.contact_info.phoneNumbers.forEach((phone) => {
         if (phone.trim() !== "") {
           formDataToSubmit.append("contact_info.phoneNumbers", phone);
@@ -316,21 +243,17 @@ const ProfileCreation = () => {
         formData.contact_info.youtube
       );
 
-      // Append location fields with correct order [latitude, longitude]
       if (formData.location.coordinates.length >= 2) {
         const [latitude, longitude] = formData.location.coordinates;
         formDataToSubmit.append("location.type", "Point");
         formDataToSubmit.append("location.coordinates", longitude);
         formDataToSubmit.append("location.coordinates", latitude);
       } else {
-        // Handle cases where coordinates are not properly set
         toast.error("Please provide valid location coordinates.");
         setLoading(false);
         return;
       }
 
-
-      // Append files
       if (formData.logo) {
         formDataToSubmit.append("logo", formData.logo);
       }
@@ -338,12 +261,6 @@ const ProfileCreation = () => {
         formDataToSubmit.append("banner", formData.banner);
       }
 
-      console.log(
-        "Transformed FormData:",
-        Object.fromEntries(formDataToSubmit.entries())
-      );
-
-      // POST data to API
       const response = await axios.post(
         "https://industradz-backend-new.onrender.com/api/business",
         formDataToSubmit,
@@ -356,9 +273,7 @@ const ProfileCreation = () => {
       );
 
       if (response) {
-      console.log("response:", response.data)
         toast.success("Business registered successfully!");
-        // Optionally, reset the form or redirect the user
         setFormData({
           businessName: "",
           businessType: "Independent Contractor",
@@ -378,11 +293,6 @@ const ProfileCreation = () => {
             youtube: "",
           },
           certifications: [],
-          workingHours: {
-            working_days: [],
-            working_start_time: "",
-            working_end_time: "",
-          },
           subscriptionPlan: "Basic",
           noOfOrders: 0,
         });
@@ -392,14 +302,8 @@ const ProfileCreation = () => {
         });
         setCustomValue("");
         setShowCustomInput(false);
-        navigate("/dashboard");
-      } else {
-        throw new Error(
-          response.data.message || "Failed to register business."
-        );
       }
     } catch (error) {
-      console.error("Error:", error);
       toast.error(
         error.response?.data?.message ||
         "An error occurred while registering your business."
@@ -590,53 +494,6 @@ const ProfileCreation = () => {
               onChange={handleChange}
               required
               min="0"
-            />
-          </div>
-        </div>
-
-        {/* Working Hours */}
-        <div className="mb-4">
-          <label className="block text-gray-600 mb-2 font-semibold">
-            Working Hours
-          </label>
-
-          {/* Select Working Days */}
-          <div className="mb-4">
-            <label className="block text-gray-600 mb-2">
-              Select Working Days
-            </label>
-            <Select
-              isMulti
-              name="working_days"
-              options={daysOptions}
-              value={formData.workingHours.working_days?.map((day) => ({
-                value: day,
-                label: day,
-              }))}
-              onChange={handleWorkingHoursChange}
-              className="w-full"
-              placeholder="Select days"
-            />
-          </div>
-
-          {/* Input Working Hours */}
-          <div className="flex space-x-4">
-            <input
-              type="time"
-              name="working_start_time"
-              value={formData.workingHours?.working_start_time || ""}
-              onChange={handleTimeChange}
-              className="w-1/2 px-4 py-2 border rounded-lg"
-              required={formData.workingHours.working_days.length > 0}
-            />
-            <span className="self-center">to</span>
-            <input
-              type="time"
-              name="working_end_time"
-              value={formData.workingHours?.working_end_time || ""}
-              onChange={handleTimeChange}
-              className="w-1/2 px-4 py-2 border rounded-lg"
-              required={formData.workingHours.working_days.length > 0}
             />
           </div>
         </div>

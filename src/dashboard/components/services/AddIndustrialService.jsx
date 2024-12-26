@@ -9,13 +9,13 @@
 //     const [formData, setFormData] = useState({
 //         title: "",
 //         description: "",
-        
+
 //         pricingAmount: "",
 //         pricingUnit: "",
 //         pricingType: "",
-        
+
 //         images: [],
-        
+
 //     });
 
 //     const [loading, setLoading] = useState(false); // New loading state
@@ -268,10 +268,9 @@
 
 
 
+// src/components/services/AddIndustrialService.jsx
 
-
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -279,6 +278,7 @@ import { motion } from "framer-motion";
 import Select from "react-select";
 import { useCookies } from "react-cookie"; // Import useCookies
 
+// Define working days options
 const daysOptions = [
     { value: "Monday", label: "Monday" },
     { value: "Tuesday", label: "Tuesday" },
@@ -289,23 +289,29 @@ const daysOptions = [
     { value: "Sunday", label: "Sunday" },
 ];
 
+// Define currency options
+const currencyOptions = [
+    { value: "EUR", label: "Euro (EUR)" },
+    { value: "DZD", label: "Algerian Dinar (DZD)" },
+];
+
 const AddIndustrialService = () => {
     const navigate = useNavigate();
-    const [cookies, setCookie, removeCookie] = useCookies(['token']); // Destructure removeCookie
+    const [cookies, setCookie, removeCookie] = useCookies(["token"]);
     const [formData, setFormData] = useState({
         title: "",
         description: "",
         category: "",
-        pricing: { // Nested pricing object
+        pricing: {
             amount: "",
             unit: "",
         },
         pricingType: "",
         images: [],
         workingHours: {
-            working_days: [],
-            working_start_time: "",
-            working_end_time: "",
+            days: "",
+            startTime: "",
+            endTime: "",
         },
     });
 
@@ -316,18 +322,17 @@ const AddIndustrialService = () => {
         "Raw Materials",
     ]);
 
-    const [pricingTypes] = useState(["Fixed Price", "Hourly Rate", "Project Based"]);
+    const [pricingTypes] = useState([
+        "Fixed Price",
+        "Hourly Rate",
+        "Project Based",
+    ]);
     const [loading, setLoading] = useState(false);
-
-    // Optional: Fetch businesses if needed
-    // useEffect(() => {
-    //     // Fetch businesses here if the backend requires it
-    // }, []);
 
     // Handle input changes, including nested fields using dot notation
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        const keys = name.split('.');
+        const keys = name.split(".");
 
         if (keys.length === 1) {
             // Top-level field
@@ -357,11 +362,13 @@ const AddIndustrialService = () => {
     };
 
     // Handle working days selection (multi-select)
-    const handleWorkingHoursChange = (selectedOptions) => {
-        const selectedDays = selectedOptions ? selectedOptions.map(option => option.value) : [];
+    const handleWorkingDaysChange = (selectedOptions) => {
+        const selectedDays = selectedOptions
+            ? selectedOptions.map((option) => option.value)
+            : [];
         setFormData((prevData) => ({
             ...prevData,
-            workingHours: { ...prevData.workingHours, working_days: selectedDays },
+            workingHours: { ...prevData.workingHours, days: selectedDays.join("-") },
         }));
     };
 
@@ -374,6 +381,14 @@ const AddIndustrialService = () => {
         }));
     };
 
+    // Handle currency dropdown change
+    const handleCurrencyChange = (selectedOption) => {
+        setFormData((prevData) => ({
+            ...prevData,
+            pricing: { ...prevData.pricing, unit: selectedOption ? selectedOption.value : "" },
+        }));
+    };
+
     // Function to convert time to 12-hour format
     const convertTo12HourFormat = (time24) => {
         const [hour, minute] = time24.split(":");
@@ -383,7 +398,6 @@ const AddIndustrialService = () => {
         return `${hour12}:${minute} ${ampm}`;
     };
 
-    // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -402,73 +416,69 @@ const AddIndustrialService = () => {
             !formData.title ||
             !formData.description ||
             !formData.category ||
-            !formData.pricing.amount || // Updated to nested field
-            !formData.pricing.unit // Updated to nested field
+            !formData.pricing.amount ||
+            !formData.pricing.unit
         ) {
             toast.error("Please fill in all required fields.");
             setLoading(false);
             return;
         }
 
-        const serviceData = new FormData();
-        serviceData.append("title", formData.title);
-        serviceData.append("description", formData.description);
-        serviceData.append("category", formData.category);
-        serviceData.append("pricing.amount", formData.pricing.amount);
-        serviceData.append("pricing.unit", formData.pricing.unit);
-        serviceData.append("pricingType", formData.pricingType);
+        // Construct the payload to match the schema
+        const payload = {
+            title: formData.title,
+            description: formData.description,
+            category: formData.category,
+            pricing: {
+                amount: Number(formData.pricing.amount), // Convert to number
+                unit: formData.pricing.unit, // Keep as string
+            },
+            pricingType: formData.pricingType,
+            workingHours: {
+                days: formData.workingHours.days, // Comma-separated string
+                startTime: Number(formData.workingHours.startTime), // Convert to number
+                endTime: Number(formData.workingHours.endTime), // Convert to number
+            },
+            images: [], // Will be handled below
+        };
 
-        // Construct workingHours.days and workingHours.time
-        const { working_days, working_start_time, working_end_time } = formData.workingHours;
-        let workingDaysString = "";
-        let workingTimeString = "";
-
-        if (working_days.length > 0) {
-            workingDaysString = working_days.join("-");
-            serviceData.append("workingHours.days", workingDaysString);
+        // Attach image URLs or file uploads
+        if (formData.images.length > 0) {
+            payload.images = formData.images.map((file) => {
+                if (typeof file === "string") {
+                    return file; // Already a URL
+                }
+                return URL.createObjectURL(file); // Convert file to URL for testing
+            });
         }
-
-        if (working_start_time && working_end_time) {
-            workingTimeString = `${convertTo12HourFormat(working_start_time)} - ${convertTo12HourFormat(working_end_time)}`;
-            serviceData.append("workingHours.time", workingTimeString);
-        }
-
-        // Optionally, add validation to ensure both days and time are provided together
-        if (working_days.length > 0 && (!working_start_time || !working_end_time)) {
-            toast.error("Please provide both start and end times for working hours.");
-            setLoading(false);
-            return;
-        }
-
-        // Attach images
-        formData.images.forEach((image) => serviceData.append("images", image));
+        console.log("Payload being sent:", payload);
 
         try {
             const response = await axios.post(
                 "https://industradz-backend-new.onrender.com/api/service",
-                serviceData,
+                payload,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
-                        "Content-Type": "multipart/form-data",
+                        "Content-Type": "application/json",
                     },
                 }
             );
             toast.success(response.data.message || "Service added successfully!");
-            navigate("/dashboard/services");
+            navigate("/dashboard/services/industrials-offering");
         } catch (error) {
             console.error(error);
-            if (error.response?.data?.error === "Invalid token") {
-                toast.error("Session expired or invalid. Please log in again.");
-                removeCookie('token'); // Correctly remove the 'token' cookie
-                navigate("/login"); // Redirect to login page
+            if (error.response?.data?.error) {
+                toast.error(error.response.data.error);
             } else {
-                toast.error(error.response?.data?.message || "Failed to add service.");
+                toast.error("Failed to add service. Please try again.");
             }
         } finally {
             setLoading(false);
         }
     };
+
+
 
     return (
         <motion.div
@@ -488,7 +498,9 @@ const AddIndustrialService = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Title Input */}
                     <div>
-                        <label htmlFor="title" className="block text-sm font-medium">Title</label>
+                        <label htmlFor="title" className="block text-sm font-medium">
+                            Title <span className="text-red-500">*</span>
+                        </label>
                         <input
                             id="title"
                             type="text"
@@ -502,7 +514,9 @@ const AddIndustrialService = () => {
 
                     {/* Description Input */}
                     <div>
-                        <label htmlFor="description" className="block text-sm font-medium">Description</label>
+                        <label htmlFor="description" className="block text-sm font-medium">
+                            Description <span className="text-red-500">*</span>
+                        </label>
                         <textarea
                             id="description"
                             name="description"
@@ -510,12 +524,15 @@ const AddIndustrialService = () => {
                             onChange={handleInputChange}
                             className="w-full border rounded px-3 py-2"
                             required
+                            rows="4"
                         />
                     </div>
 
                     {/* Category Dropdown */}
                     <div>
-                        <label htmlFor="category" className="block text-sm font-medium">Category</label>
+                        <label htmlFor="category" className="block text-sm font-medium">
+                            Category <span className="text-red-500">*</span>
+                        </label>
                         <select
                             id="category"
                             name="category"
@@ -535,7 +552,9 @@ const AddIndustrialService = () => {
 
                     {/* Pricing Amount Input */}
                     <div>
-                        <label htmlFor="pricing.amount" className="block text-sm font-medium">Pricing Amount</label>
+                        <label htmlFor="pricing.amount" className="block text-sm font-medium">
+                            Pricing Amount <span className="text-red-500">*</span>
+                        </label>
                         <input
                             id="pricing.amount"
                             type="number"
@@ -549,23 +568,33 @@ const AddIndustrialService = () => {
                         />
                     </div>
 
-                    {/* Pricing Unit Input */}
+                    {/* Pricing Unit Dropdown */}
                     <div>
-                        <label htmlFor="pricing.unit" className="block text-sm font-medium">Pricing Unit</label>
-                        <input
+                        <label htmlFor="pricing.unit" className="block text-sm font-medium">
+                            Pricing Unit <span className="text-red-500">*</span>
+                        </label>
+                        <Select
                             id="pricing.unit"
-                            type="text"
-                            name="pricing.unit" // Use dot notation for nested field
-                            value={formData.pricing.unit}
-                            onChange={handleInputChange}
+                            name="pricing.unit"
+                            options={currencyOptions}
+                            value={
+                                currencyOptions.find(
+                                    (option) => option.value === formData.pricing.unit
+                                ) || null
+                            }
+                            onChange={handleCurrencyChange}
                             className="w-full border rounded px-3 py-2"
+                            placeholder="Select Currency Unit"
+                            isClearable
                             required
                         />
                     </div>
 
                     {/* Pricing Type Dropdown */}
                     <div>
-                        <label htmlFor="pricingType" className="block text-sm font-medium">Pricing Type</label>
+                        <label htmlFor="pricingType" className="block text-sm font-medium">
+                            Pricing Type
+                        </label>
                         <select
                             id="pricingType"
                             name="pricingType"
@@ -590,53 +619,71 @@ const AddIndustrialService = () => {
 
                         {/* Select Working Days */}
                         <div className="mb-4">
-                            <label className="block text-gray-600 mb-2">
-                                Select Working Days
-                            </label>
+                            {/* Working Days Selection */}
+                            <label className="block text-gray-600 mb-2">Select Working Days</label>
                             <Select
                                 isMulti
                                 name="working_days"
                                 options={daysOptions}
-                                value={formData.workingHours.working_days?.map((day) => ({
-                                    value: day,
-                                    label: day,
-                                }))}
-                                onChange={handleWorkingHoursChange}
+                                value={daysOptions.filter((option) =>
+                                    formData.workingHours.days.split(",").includes(option.value)
+                                )}
+                                onChange={(selectedOptions) => {
+                                    const days = selectedOptions.map((opt) => opt.value).join(",");
+                                    setFormData((prevData) => ({
+                                        ...prevData,
+                                        workingHours: { ...prevData.workingHours, days },
+                                    }));
+                                }}
                                 className="w-full"
                                 placeholder="Select days"
                             />
+
+                            {/* Start Time */}
+                            <label htmlFor="startTime" className="block text-gray-600 mt-2">
+                                Start Time
+                            </label>
+                            <input
+                                id="startTime"
+                                type="number"
+                                name="startTime"
+                                value={formData.workingHours.startTime}
+                                onChange={(e) => {
+                                    setFormData((prevData) => ({
+                                        ...prevData,
+                                        workingHours: {
+                                            ...prevData.workingHours,
+                                            startTime: e.target.value,
+                                        },
+                                    }));
+                                }}
+                                className="w-full px-4 py-2 border rounded-lg"
+                                placeholder="e.g., 9 for 9 AM"
+                            />
+
+                            {/* End Time */}
+                            <label htmlFor="endTime" className="block text-gray-600 mt-2">
+                                End Time
+                            </label>
+                            <input
+                                id="endTime"
+                                type="number"
+                                name="endTime"
+                                value={formData.workingHours.endTime}
+                                onChange={(e) => {
+                                    setFormData((prevData) => ({
+                                        ...prevData,
+                                        workingHours: {
+                                            ...prevData.workingHours,
+                                            endTime: e.target.value,
+                                        },
+                                    }));
+                                }}
+                                className="w-full px-4 py-2 border rounded-lg"
+                                placeholder="e.g., 17 for 5 PM"
+                            />
                         </div>
 
-                        {/* Input Working Hours */}
-                        <div className="flex space-x-4">
-                            <div className="flex flex-col w-1/2">
-                                <label htmlFor="working_start_time" className="block text-sm font-medium">Start Time</label>
-                                <input
-                                    id="working_start_time"
-                                    type="time"
-                                    name="working_start_time"
-                                    value={formData.workingHours.working_start_time || ""}
-                                    onChange={handleTimeChange}
-                                    className="w-full px-4 py-2 border rounded-lg"
-                                    required={formData.workingHours.working_days.length > 0}
-                                />
-                            </div>
-                            <div className="flex items-center">
-                                <span>to</span>
-                            </div>
-                            <div className="flex flex-col w-1/2">
-                                <label htmlFor="working_end_time" className="block text-sm font-medium">End Time</label>
-                                <input
-                                    id="working_end_time"
-                                    type="time"
-                                    name="working_end_time"
-                                    value={formData.workingHours.working_end_time || ""}
-                                    onChange={handleTimeChange}
-                                    className="w-full px-4 py-2 border rounded-lg"
-                                    required={formData.workingHours.working_days.length > 0}
-                                />
-                            </div>
-                        </div>
                     </div>
 
                     {/* Images Input */}
@@ -656,7 +703,7 @@ const AddIndustrialService = () => {
                                     key={index}
                                     src={URL.createObjectURL(image)}
                                     alt={`Preview ${index}`}
-                                    className="w-24 h-24 object-cover mr-2 mb-2"
+                                    className="w-24 h-24 object-cover mr-2 mb-2 rounded"
                                 />
                             ))}
                         </div>
