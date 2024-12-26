@@ -244,13 +244,14 @@ const BusinessProfile = () => {
 
   const fetchBusinessDetails = async () => {
     try {
-      const response = await axios.get("https://industradz-backend-new.onrender.com/api/business/profile", {
+      const response = await axios.get(`http://industradz-backend-new.onrender.com/api/business/profile`, {
         headers: {
           Authorization: `Bearer ${cookies.token}`, // Include the bearer token from cookies
         },
-      });
+      });console.log(response)
 
       setBusinessDetails(response.data.data);
+      console.log(response)
       setSelectedBusiness(response.data.data[0]); // Set the first business as default
       setLoading(false);
     } catch (error) {
@@ -267,7 +268,7 @@ const BusinessProfile = () => {
     e.preventDefault();
     try {
       const response = await axios.put(
-        `http://industradz-backend-new.onrender.com/api/business/profile/${selectedBusiness._id}`,
+        `http://industradz-backend-new.onrender.com/api/business/profile`,
         selectedBusiness,
         {
           headers: {
@@ -299,9 +300,6 @@ const BusinessProfile = () => {
     return <p>Loading...</p>;
   }
 
-  if (!businessDetails.length) {
-    return <p>No business details found.</p>;
-  }
 
   return (
     <main className="max-w-5xl mx-auto py-10 px-6">

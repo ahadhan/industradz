@@ -166,7 +166,7 @@ const LocationInput = ({ onCoordinatesChange }) => {
   const [searchLocation, setSearchLocation] = useState("");
   const dispatch = useDispatch();
 
-  const MAP_API = "AlzaSy9VRVperivL6QcHsUWfuiwIJp9Fg6LNuAq"; // Replace with your actual API key
+  const MAP_API = "AlzaSyP7mGL-yV82VGWweaaEdSKI7NDz0HKZzkx"; // Replace with your actual API key
 
   // Handle input change and fetch suggestions
   const handleSearchInput = async (e) => {

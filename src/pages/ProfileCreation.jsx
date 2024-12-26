@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 import LocationInput from "./LocationInput";
 import axios from "axios";
 import { useCookies } from "react-cookie";
+import { useNavigate } from "react-router-dom";
 
 const ProfileCreation = () => {
   const [formData, setFormData] = useState({
@@ -51,7 +52,7 @@ const ProfileCreation = () => {
   });
   const [cookies] = useCookies(["token"]);
   const token = cookies.token;
-
+  const navigate = useNavigate();
   const { data, load } = useSelector((state) => state.dynamicFields);
   const certifications = data?.certifications;
 
@@ -272,8 +273,10 @@ const ProfileCreation = () => {
         }
       );
 
-      if (response) {
+      if (response.data.success) {
         toast.success("Business registered successfully!");
+        navigate("/dashboard");
+        console.log(response)
         setFormData({
           businessName: "",
           businessType: "Independent Contractor",
