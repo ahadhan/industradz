@@ -270,7 +270,9 @@
 
 // src/components/services/AddIndustrialService.jsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { fetchDynamicFields } from "../../../slices/dynamicFieldsSlice"; // Adjust the path as needed
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -297,6 +299,17 @@ const currencyOptions = [
 
 const AddIndustrialService = () => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const { data: dynamicFields, loading: fieldsLoading, error: fieldsError } = useSelector(
+        (state) => state.dynamicFields
+    );
+
+    const categoryOptions = dynamicFields.serviceCategories || [];
+    const sparePartCategories = dynamicFields.sparePartCategories || [];
+    const rawMaterialCategories = dynamicFields.rawMaterialCategory || [];
+
+    console.log(categoryOptions)
+
     const [cookies, setCookie, removeCookie] = useCookies(["token"]);
     const [formData, setFormData] = useState({
         title: "",
@@ -314,13 +327,6 @@ const AddIndustrialService = () => {
             endTime: "",
         },
     });
-
-    const [categories] = useState([
-        "Industrial Offerings",
-        "Industrial Machines",
-        "Spare Parts",
-        "Raw Materials",
-    ]);
 
     const [pricingTypes] = useState([
         "Fixed Price",
@@ -478,6 +484,9 @@ const AddIndustrialService = () => {
         }
     };
 
+    useEffect(() => {
+        dispatch(fetchDynamicFields());
+    }, [dispatch]);
 
 
     return (
@@ -542,7 +551,7 @@ const AddIndustrialService = () => {
                             required
                         >
                             <option value="">Select Category</option>
-                            {categories.map((category) => (
+                            {categoryOptions.map((category) => (
                                 <option key={category} value={category}>
                                     {category}
                                 </option>

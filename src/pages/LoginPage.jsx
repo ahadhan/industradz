@@ -131,9 +131,9 @@ const AuthPage = () => {
         password: password,
         userType: "serviceProvider",
       });
-
+      console.log("Backend Response:", response)
       if (response.status === 200) {
-        const { token, message, isBusinessFound } = response.data; // Extract token from response
+        const { token, message, isBusinessFound } = response.data.data; // Extract token from response
 
         if (token) {
           // Store token in localStorage

@@ -227,7 +227,6 @@
 
 
 
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -236,25 +235,26 @@ import { User } from "lucide-react";
 import SettingSection from "../dashboard/components/settings/SettingSection";
 
 const BusinessProfile = () => {
-  const [businessDetails, setBusinessDetails] = useState([]);
+  const [businessDetails, setBusinessDetails] = useState(null); // Updated to store a single object
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [cookies] = useCookies(["token"]);
 
   const fetchBusinessDetails = async () => {
+    console.log(cookies.token)
     try {
-      const response = await axios.get(`http://industradz-backend-new.onrender.com/api/business/profile`, {
-        headers: {
-          Authorization: `Bearer ${cookies.token}`, // Include the bearer token from cookies
-        },
-      });console.log(response)
-
-      setBusinessDetails(response.data.data);
-      console.log(response)
-      setSelectedBusiness(response.data.data[0]); // Set the first business as default
+      const response = await axios.get(
+        `http://industradz-backend-new.onrender.com/api/business/profile`,
+        {
+          headers: {
+            Authorization: `Bearer ${cookies.token}`, // Include the bearer token from cookies
+          },
+        }
+      );
+      setBusinessDetails(response.data.data); // Assuming `data` contains the single business object
       setLoading(false);
     } catch (error) {
+      console.error("Error fetching business details:", error);
       toast.error("Failed to fetch business details.");
       setLoading(false);
     }
@@ -269,7 +269,7 @@ const BusinessProfile = () => {
     try {
       const response = await axios.put(
         `http://industradz-backend-new.onrender.com/api/business/profile`,
-        selectedBusiness,
+        businessDetails,
         {
           headers: {
             Authorization: `Bearer ${cookies.token}`, // Include the bearer token in the PUT request
@@ -277,20 +277,17 @@ const BusinessProfile = () => {
         }
       );
       toast.success("Business profile updated successfully!");
-      setBusinessDetails((prev) =>
-        prev.map((business) =>
-          business._id === response.data._id ? response.data : business
-        )
-      );
+      setBusinessDetails(response.data.data); // Update state with the updated business details
       setEditMode(false);
     } catch (error) {
+      console.error("Error updating business profile:", error);
       toast.error("Failed to update business profile.");
     }
   };
 
   const handleFieldChange = (e) => {
     const { name, value } = e.target;
-    setSelectedBusiness((prev) => ({
+    setBusinessDetails((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -300,140 +297,113 @@ const BusinessProfile = () => {
     return <p>Loading...</p>;
   }
 
+  if (!businessDetails) {
+    return <p>No business details found.</p>;
+  }
 
   return (
     <main className="max-w-5xl mx-auto py-10 px-6">
       <SettingSection icon={User} title="Business Profile">
         <div className="bg-white shadow-lg rounded-lg p-6">
-          {/* Dropdown to select business */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-600 mb-2">
-              Select Business
-            </label>
-            <select
-              value={selectedBusiness?._id}
-              onChange={(e) =>
-                setSelectedBusiness(
-                  businessDetails.find((b) => b._id === e.target.value)
-                )
-              }
-              className="w-full border rounded p-2"
-            >
-              {businessDetails.map((business) => (
-                <option key={business._id} value={business._id}>
-                  {business.businessName}
-                </option>
-              ))}
-            </select>
+          <div className="mb-8">
+            <div className="relative">
+              <img
+                src={businessDetails.banner || "https://via.placeholder.com/400x150"}
+                alt="Banner"
+                className="rounded-lg w-full object-cover h-40"
+              />
+              <img
+                src={businessDetails.logo || "https://via.placeholder.com/150"}
+                alt="Logo"
+                className="rounded-full w-24 h-24 object-cover border-4 border-white absolute bottom-0 left-4 transform translate-y-1/2 shadow-lg"
+              />
+            </div>
           </div>
 
-          {/* Business Details */}
-          {selectedBusiness && (
-            <>
-              <div className="mb-8">
-                <div className="relative">
-                  <img
-                    src={selectedBusiness.banner || "https://via.placeholder.com/400x150"}
-                    alt="Banner"
-                    className="rounded-lg w-full object-cover h-40"
-                  />
-                  <img
-                    src={selectedBusiness.logo || "https://via.placeholder.com/150"}
-                    alt="Logo"
-                    className="rounded-full w-24 h-24 object-cover border-4 border-white absolute bottom-0 left-4 transform translate-y-1/2 shadow-lg"
-                  />
+          {!editMode ? (
+            <div className="space-y-6">
+              <h3 className="text-2xl font-semibold text-gray-800">
+                {businessDetails.businessName}
+              </h3>
+              <p className="text-gray-700 text-lg">{businessDetails.description}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-orange-600 font-semibold">Business Type</p>
+                  <p className="text-gray-700">{businessDetails.businessType}</p>
                 </div>
-              </div>
-
-              {!editMode ? (
-                <div className="space-y-6">
-                  <h3 className="text-2xl font-semibold text-gray-800">
-                    {selectedBusiness.businessName}
-                  </h3>
-                  <p className="text-gray-700 text-lg">{selectedBusiness.description}</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-orange-600 font-semibold">Business Type</p>
-                      <p className="text-gray-700">{selectedBusiness.businessType}</p>
-                    </div>
-                    <div>
-                      <p className="text-orange-600 font-semibold">Years of Experience</p>
-                      <p className="text-gray-700">
-                        {selectedBusiness.years_of_experience} years
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-orange-600 font-semibold">Expertise Level</p>
-                      <p className="text-gray-700">{selectedBusiness.expertise_level}</p>
-                    </div>
-                    <div>
-                      <p className="text-orange-600 font-semibold">Business Email</p>
-                      <a
-                        href={`mailto:${selectedBusiness.contact_info.businessEmail}`}
-                        className="text-blue-600 underline"
-                      >
-                        {selectedBusiness.contact_info.businessEmail}
-                      </a>
-                    </div>
-                    <div>
-                      <p className="text-orange-600 font-semibold">Website</p>
-                      <a
-                        href={selectedBusiness.contact_info.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 underline"
-                      >
-                        {selectedBusiness.contact_info.website}
-                      </a>
-                    </div>
-                  </div>
+                <div>
+                  <p className="text-orange-600 font-semibold">Years of Experience</p>
+                  <p className="text-gray-700">
+                    {businessDetails.years_of_experience} years
+                  </p>
                 </div>
-              ) : (
-                <form
-                  onSubmit={handleEditBusinessProfile}
-                  className="space-y-4 border-t pt-6"
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium">Business Name</label>
-                      <input
-                        type="text"
-                        name="businessName"
-                        value={selectedBusiness.businessName}
-                        onChange={handleFieldChange}
-                        className="w-full border rounded p-2"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium">Business Type</label>
-                      <input
-                        type="text"
-                        name="businessType"
-                        value={selectedBusiness.businessType}
-                        onChange={handleFieldChange}
-                        className="w-full border rounded p-2"
-                      />
-                    </div>
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded"
+                <div>
+                  <p className="text-orange-600 font-semibold">Expertise Level</p>
+                  <p className="text-gray-700">{businessDetails.expertise_level}</p>
+                </div>
+                <div>
+                  <p className="text-orange-600 font-semibold">Business Email</p>
+                  <a
+                    href={`mailto:${businessDetails.contact_info.businessEmail}`}
+                    className="text-blue-600 underline"
                   >
-                    Save Changes
-                  </button>
-                </form>
-              )}
-
-              <div className="flex flex-col sm:flex-row gap-4 mt-6">
-                <button
-                  onClick={() => setEditMode((prev) => !prev)}
-                  className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-                >
-                  {editMode ? "Cancel" : "Edit Profile"}
-                </button>
+                    {businessDetails.contact_info.businessEmail}
+                  </a>
+                </div>
+                <div>
+                  <p className="text-orange-600 font-semibold">Website</p>
+                  <a
+                    href={businessDetails.contact_info.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                  >
+                    {businessDetails.contact_info.website}
+                  </a>
+                </div>
               </div>
-            </>
+            </div>
+          ) : (
+            <form onSubmit={handleEditBusinessProfile} className="space-y-4 border-t pt-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium">Business Name</label>
+                  <input
+                    type="text"
+                    name="businessName"
+                    value={businessDetails.businessName}
+                    onChange={handleFieldChange}
+                    className="w-full border rounded p-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">Business Type</label>
+                  <input
+                    type="text"
+                    name="businessType"
+                    value={businessDetails.businessType}
+                    onChange={handleFieldChange}
+                    className="w-full border rounded p-2"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded"
+              >
+                Save Changes
+              </button>
+            </form>
           )}
+
+          <div className="flex flex-col sm:flex-row gap-4 mt-6">
+            <button
+              onClick={() => setEditMode((prev) => !prev)}
+              className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+            >
+              {editMode ? "Cancel" : "Edit Profile"}
+            </button>
+          </div>
         </div>
       </SettingSection>
     </main>
