@@ -742,6 +742,7 @@
 
 
 // src/components/IndustrialMachinesOffering.jsx
+// src/dashboard/components/services/machines/IndustrialMachinedOfferings.jsx
 
 import React, { useState, useEffect } from "react";
 import axios from "axios";
@@ -759,13 +760,7 @@ const IndustrialMachinesOffering = () => {
 
   // Access dynamic fields from Redux store
   const {
-    machine_brands,
-    machine_models,
-    machine_types,
-    sparePartCategories,
-    serviceCategories,
-    certifications,
-    rawMaterialCategory,
+    data: dynamicData,
     loading: fieldsLoading,
     error: fieldsError,
   } = useSelector((state) => state.dynamicFields);
@@ -810,7 +805,7 @@ const IndustrialMachinesOffering = () => {
     after_sales_service: false,
     accessories_included: false,
     spare_parts_available: false,
-    spare_parts_subcategory: "", // Assuming you have this field based on previous context
+    spare_parts_subcategory: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -1063,8 +1058,8 @@ const IndustrialMachinesOffering = () => {
               <Select
                 id="machine_type"
                 name="machine_type"
-                options={machine_types.map(type => ({ value: type, label: type }))}
-                value={machine_types.length > 0 && formData.machine_type ? { value: formData.machine_type, label: formData.machine_type } : null}
+                options={Array.isArray(dynamicData.machine_types) ? dynamicData.machine_types.map(type => ({ value: type, label: type })) : []}
+                value={Array.isArray(dynamicData.machine_types) && formData.machine_type ? { value: formData.machine_type, label: formData.machine_type } : null}
                 onChange={handleSelectChange}
                 className="mt-1"
                 placeholder="Select Machine Type"
@@ -1107,8 +1102,8 @@ const IndustrialMachinesOffering = () => {
               <Select
                 id="brand"
                 name="brand"
-                options={machine_brands.map(brand => ({ value: brand, label: brand }))}
-                value={machine_brands.length > 0 && formData.brand ? { value: formData.brand, label: formData.brand } : null}
+                options={Array.isArray(dynamicData.machine_brands) ? dynamicData.machine_brands.map(brand => ({ value: brand, label: brand })) : []}
+                value={Array.isArray(dynamicData.machine_brands) && formData.brand ? { value: formData.brand, label: formData.brand } : null}
                 onChange={handleSelectChange}
                 className="mt-1"
                 placeholder="Select Brand"
@@ -1124,8 +1119,8 @@ const IndustrialMachinesOffering = () => {
               <Select
                 id="model"
                 name="model"
-                options={machine_models.map(model => ({ value: model, label: model }))}
-                value={machine_models.length > 0 && formData.model ? { value: formData.model, label: formData.model } : null}
+                options={Array.isArray(dynamicData.machine_models) ? dynamicData.machine_models.map(model => ({ value: model, label: model })) : []}
+                value={Array.isArray(dynamicData.machine_models) && formData.model ? { value: formData.model, label: formData.model } : null}
                 onChange={handleSelectChange}
                 className="mt-1"
                 placeholder="Select Model"
@@ -1549,12 +1544,18 @@ const IndustrialMachinesOffering = () => {
                 <Select
                   id="spare_parts_subcategory"
                   name="spare_parts_subcategory"
-                  options={sparePartCategories.flatMap(category => 
-                    category.subCategories.map(sub => ({ 
-                      value: sub, 
-                      label: `${category.category} - ${sub}` 
-                    }))
-                  )}
+                  options={
+                    Array.isArray(dynamicData.sparePartCategories)
+                      ? dynamicData.sparePartCategories.flatMap(category => 
+                          Array.isArray(category.subCategories) ? 
+                            category.subCategories.map(sub => ({ 
+                              value: sub, 
+                              label: `${category.category} - ${sub}` 
+                            })) 
+                            : []
+                        )
+                      : []
+                  }
                   value={formData.spare_parts_subcategory ? { value: formData.spare_parts_subcategory, label: formData.spare_parts_subcategory } : null}
                   onChange={handleSelectChange}
                   className="mt-1"
@@ -1596,7 +1597,7 @@ const IndustrialMachinesOffering = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              className={`bg-orange-500 text-white font-bold py-2 px-4 rounded-md hover:bg-orange-600 transition duration-200 w-full ${
+              className={`bg-orange text-white font-bold py-2 px-4 rounded-md hover:bg-orange-600 transition duration-200 w-full ${
                 loading ? "opacity-50 cursor-not-allowed" : ""
               }`}
               disabled={loading}
