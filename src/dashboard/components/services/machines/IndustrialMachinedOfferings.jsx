@@ -964,9 +964,9 @@ const IndustrialMachinesOffering = () => {
       selectedImages.forEach((image, index) => {
         submissionData.append("machine_images", image);
       });
-
+      console.log(cookies.token)
       // Send data to backend
-      const apiUrl = `${process.env.REACT_APP_BASE_URL}${process.env.REACT_APP_API_ENDPOINT}`; // Ensure these env variables are set
+      const apiUrl = ` https://industradz-backend-new.onrender.com/api/machinery`; // Ensure these env variables are set
 
       const response = await axios.post(apiUrl, submissionData, {
         headers: {
@@ -977,12 +977,16 @@ const IndustrialMachinesOffering = () => {
 
       if (response.data.success) {
         toast.success(response.data.message || "Industrial Machine registered successfully!");
-        navigate("/dashboard/machines"); // Redirect to machines dashboard or desired page
+        console.log(response)
+        navigate("/dashboard/services/industrials-offering"); // Redirect to machines dashboard or desired page
+
       } else {
         toast.error(response.data.message || "Failed to register industrial machine.");
+        console.log(response.data.message || "Failed to register industrial machine.")
       }
     } catch (error) {
       console.error(error);
+      
       if (error.response?.data?.error === "Invalid token") {
         toast.error("Session expired or invalid. Please log in again.");
         removeCookie('token'); // Remove the 'token' cookie
