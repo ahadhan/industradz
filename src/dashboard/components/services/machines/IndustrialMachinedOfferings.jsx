@@ -741,9 +741,6 @@
 
 
 
-// src/components/IndustrialMachinesOffering.jsx
-// src/dashboard/components/services/machines/IndustrialMachinedOfferings.jsx
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -978,7 +975,7 @@ const IndustrialMachinesOffering = () => {
       if (response.data.success) {
         toast.success(response.data.message || "Industrial Machine registered successfully!");
         console.log(response)
-        navigate("/dashboard/services/industrials-offering"); // Redirect to machines dashboard or desired page
+        navigate("/dashboard/services/marketplace/industrial-machines"); // Redirect to machines dashboard or desired page
 
       } else {
         toast.error(response.data.message || "Failed to register industrial machine.");

@@ -71,3 +71,4 @@ const IndustrialOfferings = () => {
 };
 
 export default IndustrialOfferings;
+ 

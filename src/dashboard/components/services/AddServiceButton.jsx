@@ -128,7 +128,7 @@ const AddServiceButton = () => {
         onClick={() => dispatch(openModal())}
       >
         <PlusCircle size={18} />
-        Service Type
+        Add Service
       </button>
 
       {/* Modal */}
