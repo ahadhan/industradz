@@ -20,6 +20,7 @@ import SparePartsOffering from "./dashboard/components/services/machines/SparePa
 import RawMaterial from "./dashboard/components/services/machines/RawMaterial";
 import IndustrialMachineDetails from "./pages/IndustrialMachineDetails";
 import { Toaster } from 'react-hot-toast';
+import IndustrialOfferingDetails from "./pages/IndustrialOfferingDetails";
 
 function App() {
   const location = useLocation();
@@ -50,6 +51,7 @@ function App() {
 
           {/* New Route for Machine Details */}
           <Route path="/dashboard/services/marketplace/industrial-machines/:id" element={<IndustrialMachineDetails />} />
+          <Route path="/dashboard/services/industrial-offering/:id" element={<IndustrialOfferingDetails />} />
         </Routes>
 
         {/* Insert Toaster here */}

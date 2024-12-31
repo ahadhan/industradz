@@ -1,273 +1,3 @@
-// import React, { useState } from "react";
-// import axios from "axios";
-// import { toast } from "react-hot-toast";
-// import { useNavigate } from "react-router-dom";
-// import { motion } from "framer-motion";
-
-// const AddIndustrialService = () => {
-//     const router = useNavigate();
-//     const [formData, setFormData] = useState({
-//         title: "",
-//         description: "",
-
-//         pricingAmount: "",
-//         pricingUnit: "",
-//         pricingType: "",
-
-//         images: [],
-
-//     });
-
-//     const [loading, setLoading] = useState(false); // New loading state
-
-//     // const categories = [
-//     //     "Industrial Offerings",
-//     //     "Industrial Machines",
-//     //     "Spare Parts",
-//     //     "Raw Materials",
-//     // ];
-
-//     // Handle input changes
-//     const handleInputChange = (e) => {
-//         const { name, value } = e.target;
-//         setFormData((prevData) => ({ ...prevData, [name]: value }));
-//     };
-
-//     // Handle dropdown changes
-//     const handleDropdownChange = (e) => {
-//         const { name, value } = e.target;
-//         setFormData((prevData) => ({ ...prevData, [name]: value }));
-//     };
-
-//     // Handle file input
-//     const handleFileChange = (e) => {
-//         const files = e.target.files;
-//         if (files) {
-//             setFormData((prevData) => ({ ...prevData, images: Array.from(files) }));
-//         }
-//     };
-
-//     // Handle coordinates input
-//     const handleCoordinateChange = (index, value) => {
-//         const updatedCoordinates = [...formData.coordinates];
-//         updatedCoordinates[index] = value;
-//         setFormData((prevData) => ({ ...prevData, coordinates: updatedCoordinates }));
-//     };
-
-//     // Handle form submission
-//     const handleSubmit = async (e) => {
-//         e.preventDefault();
-//         setLoading(true); // Start loading
-
-//         const token = localStorage.getItem("token");
-
-//         if (!token) {
-//             toast.error("You are not logged in. Please log in first.");
-//             setLoading(false); // Stop loading
-//             return;
-//         }
-
-//         const serviceData = new FormData();
-//         serviceData.append("title", formData.title);
-//         serviceData.append("description", formData.description);
-//         serviceData.append("pricing[amount]", formData.pricingAmount);
-//         serviceData.append("pricing[unit]", formData.pricingUnit);
-//         serviceData.append("pricingType", formData.pricingType);
-
-
-//         // Attach images
-//         formData.images.forEach((image) => serviceData.append("images", image));
-
-//         try {
-//             const response = await axios.post(
-//                 "https://industradz-backend-new.onrender.com/api/service",
-//                 serviceData,
-//                 {
-//                     headers: {
-//                         Authorization: `Bearer ${token}`,
-//                         "Content-Type": "multipart/form-data",
-//                     },
-//                 }
-//             );
-//             toast.success(response.data.message || "Service added successfully!");
-//             router.push("/dashboard/services");
-//         } catch (error) {
-//             console.error(error);
-//             toast.error(error.response?.data?.message || "Failed to add service.");
-//         } finally {
-//             setLoading(false); // Stop loading after request completion
-//         }
-//     };
-
-//     return (
-//         <motion.div className="max-w-2xl mt-4 mx-auto bg-white p-6 rounded-lg shadow-md"
-//             initial={{ opacity: 0, y: 20 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             transition={{ delay: 0.2 }}>
-//             <h2 className="text-xl font-bold mb-4 text-orange">Add Service</h2>
-//             {loading ? (
-//                 <div className="flex justify-center items-center h-screen">
-//                     <div className="loader">
-//                         <div className="justify-content-center jimu-primary-loading"></div>
-//                     </div>
-//                 </div>
-//             ) : (
-//                 <form onSubmit={handleSubmit} className="space-y-4">
-//                     {/* Title Input */}
-//                     <div>
-//                         <label className="block text-sm font-medium">Title</label>
-//                         <input
-//                             type="text"
-//                             name="title"
-//                             value={formData.title}
-//                             onChange={handleInputChange}
-//                             className="w-full border rounded px-3 py-2"
-//                             required
-//                         />
-//                     </div>
-
-//                     {/* Description Input */}
-//                     <div>
-//                         <label className="block text-sm font-medium">Description</label>
-//                         <textarea
-//                             name="description"
-//                             value={formData.description}
-//                             onChange={handleInputChange}
-//                             className="w-full border rounded px-3 py-2"
-//                             required
-//                         />
-//                     </div>
-
-//                     {/* Coordinates Input */}
-//                     {/* <div className="flex gap-4">
-//                         <div>
-//                             <label className="block text-sm font-medium">Latitude</label>
-//                             <input
-//                                 type="text"
-//                                 value={formData.coordinates[0]}
-//                                 onChange={(e) => handleCoordinateChange(0, e.target.value)}
-//                                 className="w-full border rounded px-3 py-2"
-//                             />
-//                         </div>
-//                         <div>
-//                             <label className="block text-sm font-medium">Longitude</label>
-//                             <input
-//                                 type="text"
-//                                 value={formData.coordinates[1]}
-//                                 onChange={(e) => handleCoordinateChange(1, e.target.value)}
-//                                 className="w-full border rounded px-3 py-2"
-//                             />
-//                         </div>
-//                     </div> */}
-
-//                     {/* Category Dropdown */}
-//                     {/* <div>
-//                         <label className="block text-sm font-medium">Category</label>
-//                         <select
-//                             name="category"
-//                             value={formData.category}
-//                             onChange={handleDropdownChange}
-//                             className="w-full border rounded px-3 py-2"
-//                         >
-//                             {categories.map((category) => (
-//                                 <option key={category} value={category}>
-//                                     {category}
-//                                 </option>
-//                             ))}
-//                         </select>
-//                     </div> */}
-
-//                     {/* Pricing Amount Input */}
-//                     <div>
-//                         <label className="block text-sm font-medium">Pricing Amount</label>
-//                         <input
-//                             type="number"
-//                             name="pricingAmount"
-//                             value={formData.pricingAmount}
-//                             onChange={handleInputChange}
-//                             className="w-full border rounded px-3 py-2"
-//                             required
-//                         />
-//                     </div>
-
-//                     {/* Pricing Unit Input */}
-//                     <div>
-//                         <label className="block text-sm font-medium">Pricing Unit</label>
-//                         <input
-//                             type="text"
-//                             name="pricingUnit"
-//                             value={formData.pricingUnit}
-//                             onChange={handleInputChange}
-//                             className="w-full border rounded px-3 py-2"
-//                         />
-//                     </div>
-
-//                     {/* Pricing Type Input */}
-//                     <div>
-//                         <label className="block text-sm font-medium">Pricing Type</label>
-//                         <input
-//                             type="text"
-//                             name="pricingType"
-//                             value={formData.pricingType}
-//                             onChange={handleInputChange}
-//                             className="w-full border rounded px-3 py-2"
-//                         />
-//                     </div>
-
-//                     {/* Availability Input */}
-//                     {/* <div>
-//                         <label className="block text-sm font-medium">Availability</label>
-//                         <input
-//                             type="text"
-//                             name="availability"
-//                             value={formData.availability}
-//                             onChange={handleInputChange}
-//                             className="w-full border rounded px-3 py-2"
-//                         />
-//                     </div> */}
-
-//                     {/* Images Input */}
-//                     <div>
-//                         <label className="block text-sm font-medium">Images</label>
-//                         <input
-//                             type="file"
-//                             multiple
-//                             onChange={handleFileChange}
-//                             className="w-full"
-//                         />
-//                     </div>
-
-//                     {/* Submit Button */}
-//                     <button
-//                         type="submit"
-//                         className="bg-orange text-white font-bold py-2 px-4 rounded transition duration-200 w-full"
-//                     >
-//                         Register Service
-//                     </button>
-//                 </form>
-//             )}
-//         </motion.div>
-//     );
-// };
-
-// export default AddIndustrialService;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // src/components/services/AddIndustrialService.jsx
 
 import React, { useState, useEffect } from "react";
@@ -374,7 +104,7 @@ const AddIndustrialService = () => {
             : [];
         setFormData((prevData) => ({
             ...prevData,
-            workingHours: { ...prevData.workingHours, days: selectedDays.join("-") },
+            workingHours: { ...prevData.workingHours, days: selectedDays.join(",") },
         }));
     };
 
@@ -395,7 +125,7 @@ const AddIndustrialService = () => {
         }));
     };
 
-    // Function to convert time to 12-hour format
+    // Function to convert time to 12-hour format (optional, if needed)
     const convertTo12HourFormat = (time24) => {
         const [hour, minute] = time24.split(":");
         let hour12 = parseInt(hour, 10);
@@ -430,43 +160,35 @@ const AddIndustrialService = () => {
             return;
         }
 
-        // Construct the payload to match the schema
-        const payload = {
-            title: formData.title,
-            description: formData.description,
-            category: formData.category,
-            pricing: {
-                amount: Number(formData.pricing.amount), // Convert to number
-                unit: formData.pricing.unit, // Keep as string
-            },
-            pricingType: formData.pricingType,
-            workingHours: {
-                days: formData.workingHours.days, // Comma-separated string
-                startTime: Number(formData.workingHours.startTime), // Convert to number
-                endTime: Number(formData.workingHours.endTime), // Convert to number
-            },
-            images: [], // Will be handled below
-        };
+        // Construct FormData
+        const serviceData = new FormData();
+        serviceData.append("title", formData.title);
+        serviceData.append("description", formData.description);
+        serviceData.append("category", formData.category);
+        serviceData.append("pricing[amount]", formData.pricing.amount);
+        serviceData.append("pricing[unit]", formData.pricing.unit);
+        serviceData.append("pricingType", formData.pricingType);
 
-        // Attach image URLs or file uploads
-        if (formData.images.length > 0) {
-            payload.images = formData.images.map((file) => {
-                if (typeof file === "string") {
-                    return file; // Already a URL
-                }
-                return URL.createObjectURL(file); // Convert file to URL for testing
-            });
-        }
-        console.log("Payload being sent:", payload);
+        serviceData.append("workingHours[days]", formData.workingHours.days);
+        serviceData.append("workingHours[startTime]", formData.workingHours.startTime);
+        serviceData.append("workingHours[endTime]", formData.workingHours.endTime);
+
+        // Attach images
+        formData.images.forEach((image, index) => {
+            serviceData.append("images", image); // 'images' should match the backend's expected field name
+        });
+
+        console.log("FormData being sent:", serviceData);
 
         try {
             const response = await axios.post(
                 "https://industradz-backend-new.onrender.com/api/service",
-                payload,
+                serviceData,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
+                        // Note: When using FormData, do NOT set the 'Content-Type' header manually.
+                        // Let the browser set it, including the correct 'boundary'.
                     },
                 }
             );
@@ -638,7 +360,9 @@ const AddIndustrialService = () => {
                                     formData.workingHours.days.split(",").includes(option.value)
                                 )}
                                 onChange={(selectedOptions) => {
-                                    const days = selectedOptions.map((opt) => opt.value).join(",");
+                                    const days = selectedOptions
+                                        ? selectedOptions.map((opt) => opt.value).join(",")
+                                        : "";
                                     setFormData((prevData) => ({
                                         ...prevData,
                                         workingHours: { ...prevData.workingHours, days },
@@ -657,17 +381,11 @@ const AddIndustrialService = () => {
                                 type="number"
                                 name="startTime"
                                 value={formData.workingHours.startTime}
-                                onChange={(e) => {
-                                    setFormData((prevData) => ({
-                                        ...prevData,
-                                        workingHours: {
-                                            ...prevData.workingHours,
-                                            startTime: e.target.value,
-                                        },
-                                    }));
-                                }}
+                                onChange={handleTimeChange}
                                 className="w-full px-4 py-2 border rounded-lg"
                                 placeholder="e.g., 9 for 9 AM"
+                                min="0"
+                                max="23"
                             />
 
                             {/* End Time */}
@@ -679,17 +397,11 @@ const AddIndustrialService = () => {
                                 type="number"
                                 name="endTime"
                                 value={formData.workingHours.endTime}
-                                onChange={(e) => {
-                                    setFormData((prevData) => ({
-                                        ...prevData,
-                                        workingHours: {
-                                            ...prevData.workingHours,
-                                            endTime: e.target.value,
-                                        },
-                                    }));
-                                }}
+                                onChange={handleTimeChange}
                                 className="w-full px-4 py-2 border rounded-lg"
                                 placeholder="e.g., 17 for 5 PM"
+                                min="0"
+                                max="23"
                             />
                         </div>
 

@@ -55,8 +55,8 @@ const IndustrialOfferings = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-console.log(response.data.data)
-      if (Array.isArray(response.data.data)) {
+      console.log(response.data.data)
+      if (response.data.success) {
         setServices(response.data.data);
       } else {
         console.error("Unexpected API response format:", response.data);
@@ -80,7 +80,7 @@ console.log(response.data.data)
         toast.error("An error occurred. Please check your network.");
       }
 
-      setServices([]);
+      // setServices([]);
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ console.log(response.data.data)
 
   const handleViewDetails = (serviceId) => {
     setLoading(true);
-    navigate(`/dashboard/services/offerings/${serviceId}`); // Update the route as needed
+    navigate(`/dashboard/services/industrial-offering/${serviceId}`); // Update the route as needed
     setLoading(false);
   };
 
@@ -173,13 +173,28 @@ console.log(response.data.data)
     {
       name: "Average Price",
       icon: DollarSign,
-      value:
-        Array.isArray(services) && services.length > 0
-          ? `$${Math.round(
-              services.reduce((acc, s) => acc + s.price, 0) /
-                services.length
-            )}`
-          : "$0",
+      value: (() => {
+        if (Array.isArray(services) && services.length > 0) {
+          // Filter out services without a valid price
+          const validServices = services.filter(service => {
+            const price = Number(service.price);
+            return !isNaN(price);
+          });
+
+          if (validServices.length === 0) {
+            return "$0";
+          }
+
+          // Calculate the total price
+          const totalPrice = validServices.reduce((acc, service) => acc + Number(service.price), 0);
+
+          // Calculate the average price
+          const averagePrice = Math.round(totalPrice / validServices.length);
+
+          return `$${averagePrice}`;
+        }
+        return "$0";
+      })(),
       color: "#10B981",
     },
     {
@@ -205,7 +220,7 @@ console.log(response.data.data)
     <>
       <Header title={"Industrial Offerings"} />
 
-      <div className="max-w-7xl mx-auto py-6 px-4 lg:px-8">
+      <div className=" mx-auto py-6 px-4 lg:px-8">
         <motion.div
           className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-6"
           initial={{ opacity: 0, y: 20 }}
@@ -243,41 +258,32 @@ console.log(response.data.data)
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {Array.isArray(services) && services.length > 0 ? (
+            {services.length > 0 && Array.isArray(services) ? (
               services.map((service) => (
                 <div
                   key={service._id}
                   className="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300 relative"
                 >
-                  {service.service_images &&
-                  <img
-                    src={service.service_images[0]}
-                    alt={service.service_name || "Unnamed Service"}
-                    className="w-full h-48 object-cover"
-                  />
-                }
+                  {service.images &&
+                    <img
+                      src={service.images[0]}
+                      alt={service.title || "Unnamed Service"}
+                      className="w-full h-48 object-cover"
+                    />
+                  }
                   <div className="p-4">
                     <h2 className="text-lg font-semibold text-gray-800">
-                      {service.service_name || "Unnamed Service"}
+                      {service.title || "Unnamed Service"}
                     </h2>
                     <p className="text-sm text-gray-600 mt-1">
-                      <span className="font-medium">Condition:</span>{" "}
-                      {service.condition || "N/A"}
+                      <span className="font-medium">Category:</span>{" "}
+                      {service.category || "N/A"}
                     </p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      <span className="font-medium">Brand:</span>{" "}
-                      {service.brand || "N/A"}
-                    </p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      <span className="font-medium">Location:</span>{" "}
-                      {service.location_city || "N/A"},{" "}
-                      {service.location_country || "N/A"}
-                    </p>
+                    
                     <div className="mt-4">
-                      <p className="text-xl text-gray-500 font-bold">
-                        {`${service.currency || "$"} ${
-                          service.price || "0"
-                        }`}
+                      <p className="text-lg text-gray-500 font-bold">
+                        {`${service.pricing.unit || ""} ${service.pricing.amount || "0"
+                          }`}
                       </p>
                     </div>
                     <button
