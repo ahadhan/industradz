@@ -10,10 +10,24 @@ import { reverseGeocode } from '../utils/reverseGeocode';
 import { motion } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import { Navigation, Pagination, A11y , Autoplay } from 'swiper/modules';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
-// Import any additional icons or components as needed
+// Fix Leaflet's default icon paths (necessary for React Leaflet)
+delete L.Icon.Default.prototype._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 const IndustrialOfferingDetails = () => {
   const { id } = useParams(); // Extract service ID from URL
@@ -22,6 +36,15 @@ const IndustrialOfferingDetails = () => {
   const [service, setService] = useState(null);
   const [businessLocation, setBusinessLocation] = useState({ city: '', country: '' });
   const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    category: '',
+    pricing: { amount: '', unit: '' },
+    pricingType: '',
+    // Add other fields as necessary
+  });
+  const [updating, setUpdating] = useState(false);
 
   // Base URL
   const baseURL = 'https://industradz-backend-new.onrender.com';
@@ -43,9 +66,20 @@ const IndustrialOfferingDetails = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-
+        console.log(response.data.data.workingHours.days)
         if (response.data.success) {
           setService(response.data.data);
+          setFormData({
+            title: response.data.data.title || '',
+            description: response.data.data.description || '',
+            category: response.data.data.category || '',
+            pricing: {
+              amount: response.data.data.pricing?.amount || '',
+              unit: response.data.data.pricing?.unit || '',
+            },
+            pricingType: response.data.data.pricingType || '',
+            // Populate other fields as necessary
+          });
 
           // Extract coordinates
           const coordinates = response.data.data.business.location.coordinates;
@@ -59,9 +93,7 @@ const IndustrialOfferingDetails = () => {
         }
       } catch (error) {
         console.error('Error fetching service details:', error);
-        toast.error(
-          error.response?.data?.message || 'Failed to fetch service details.'
-        );
+        toast.error(error.response?.data?.message || 'Failed to fetch service details.');
       } finally {
         setLoading(false);
       }
@@ -69,6 +101,76 @@ const IndustrialOfferingDetails = () => {
 
     fetchService();
   }, [id, cookies.token, navigate]);
+
+  // Handle Input Changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    // Handle nested fields like pricing.amount
+    if (name.startsWith('pricing.')) {
+      const field = name.split('.')[1];
+      setFormData((prevData) => ({
+        ...prevData,
+        pricing: {
+          ...prevData.pricing,
+          [field]: value,
+        },
+      }));
+    } else {
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: value,
+      }));
+    }
+  };
+
+  // Handle Form Submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setUpdating(true);
+
+    try {
+      const token = cookies.token;
+
+      if (!token) {
+        toast.error('You are not logged in. Please log in first.');
+        navigate('/login'); // Redirect to login if not authenticated
+        return;
+      }
+
+      const updatedService = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        pricing: {
+          amount: formData.pricing.amount,
+          unit: formData.pricing.unit,
+        },
+        pricingType: formData.pricingType,
+        // Add other fields as necessary
+      };
+
+      const response = await axios.put(`${baseURL}/api/service/${id}`, updatedService, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.data.success) {
+        toast.success('Service updated successfully!');
+        // Optionally, redirect or update state
+        navigate('/dashboard/services/industrials-offering'); // Redirect to list page
+      } else {
+        toast.error(response.data.message || 'Failed to update service.');
+      }
+    } catch (error) {
+      console.error('Error updating service:', error);
+      toast.error(error.response?.data?.message || 'Failed to update service.');
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   // Render Loading State
   if (loading) {
@@ -99,17 +201,12 @@ const IndustrialOfferingDetails = () => {
 
   // Destructure Service Data for Easier Access
   const {
-    title,
-    description,
-    category,
-    pricing,
-    pricingType,
     images,
     business,
     status,
-    reviews,
     createdAt,
     updatedAt,
+    // Add other fields as necessary
   } = service;
 
   const {
@@ -122,15 +219,12 @@ const IndustrialOfferingDetails = () => {
     workingHours,
     subscriptionPlan,
     noOfOrders,
-    reviews: businessReviews,
     logo,
     banner,
     ratings,
     expertise_level,
     website,
-    machines,
-    spareParts,
-    ratings: businessRatings,
+    location: businessLocationData, // Assuming business has a location field
   } = business;
 
   // Format Dates
@@ -168,56 +262,148 @@ const IndustrialOfferingDetails = () => {
           <h1 className="text-3xl font-bold">{businessName}</h1>
           <p className="text-gray-600">{businessType}</p>
           <p className="text-gray-600">
-            {years_of_experience} {years_of_experience > 1 ? 'Years' : 'Year'} of
-            Experience
+            {years_of_experience} {years_of_experience > 1 ? 'Years' : 'Year'} of Experience
           </p>
         </div>
       </div>
 
-      {/* Service Details */}
+      {/* Service Details and Edit Form */}
       <div className="mt-6">
-        <h2 className="text-2xl font-semibold">{title}</h2>
-        <p className="mt-2 text-gray-700">{description}</p>
-        <p className="mt-2">
-          <span className="font-medium">Category:</span> {category}
-        </p>
-        <p className="mt-2">
-          <span className="font-medium">Pricing Type:</span> {pricingType}
-        </p>
-        <p className="mt-2">
-          <span className="font-medium">Pricing:</span> {pricing.amount}{' '}
-          {pricing.unit}
-        </p>
-        <p className="mt-2">
-          <span className="font-medium">Status:</span>{' '}
-          <span
-            className={`px-2 py-1 rounded ${
-              status === 'approved'
-                ? 'bg-green-200 text-green-800'
-                : 'bg-yellow-200 text-yellow-800'
-            }`}
-          >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-          </span>
-        </p>
-        <p className="mt-2">
-          <span className="font-medium">Created At:</span> {formattedCreatedAt}
-        </p>
-        <p className="mt-2">
-          <span className="font-medium">Updated At:</span> {formattedUpdatedAt}
-        </p>
+        <h2 className="text-2xl font-semibold">Edit Service Details</h2>
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          {/* Title */}
+          <div>
+            <label htmlFor="title" className="block font-medium">
+              Title
+            </label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label htmlFor="description" className="block font-medium">
+              Description
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+              rows={4}
+            ></textarea>
+          </div>
+
+          {/* Category */}
+          <div>
+            <label htmlFor="category" className="block font-medium">
+              Category
+            </label>
+            <input
+              type="text"
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+            />
+          </div>
+
+          {/* Pricing Type */}
+          <div>
+            <label htmlFor="pricingType" className="block font-medium">
+              Pricing Type
+            </label>
+            <input
+              type="text"
+              id="pricingType"
+              name="pricingType"
+              value={formData.pricingType}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+            />
+          </div>
+
+          {/* Pricing Amount */}
+          <div>
+            <label htmlFor="pricing.amount" className="block font-medium">
+              Pricing Amount
+            </label>
+            <input
+              type="number"
+              id="pricing.amount"
+              name="pricing.amount"
+              value={formData.pricing.amount}
+              onChange={handleChange}
+              required
+              min="0"
+              step="0.01"
+              className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+            />
+          </div>
+
+          {/* Pricing Unit */}
+          <div>
+            <label htmlFor="pricing.unit" className="block font-medium">
+              Pricing Unit
+            </label>
+            <input
+              type="text"
+              id="pricing.unit"
+              name="pricing.unit"
+              value={formData.pricing.unit}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+            />
+          </div>
+
+          {/* Submit Button */}
+          <div>
+            <button
+              type="submit"
+              disabled={updating}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors duration-200"
+            >
+              {updating ? 'Updating...' : 'Update Service'}
+            </button>
+          </div>
+        </form>
       </div>
 
       {/* Image Gallery */}
       {images && images.length > 0 && (
         <div className="mt-6">
           <h3 className="text-xl font-semibold">Images</h3>
-          <Swiper spaceBetween={10} slidesPerView={1} className="mt-2">
+          <Swiper
+            modules={[Navigation, Pagination, A11y, Autoplay]}
+            spaceBetween={10}
+            slidesPerView={1}
+            navigation
+            pagination={{ clickable: true }}
+            loop={true}
+            autoplay={{
+              delay: 3000,
+              disableOnInteraction: false,
+            }}
+            className="mySwiper mt-2"
+          >
             {images.map((imgUrl, index) => (
               <SwiperSlide key={index}>
                 <img
                   src={imgUrl}
-                  alt={`${title} Image ${index + 1}`}
+                  alt={`Service Image ${index + 1}`}
                   className="w-full h-64 object-cover rounded-md"
                 />
               </SwiperSlide>
@@ -336,11 +522,11 @@ const IndustrialOfferingDetails = () => {
         <p className="mt-2 text-gray-700">
           {businessLocation.city}, {businessLocation.country}
         </p>
-        {/* Optional: Integrate a Map Here */}
+        {/* Map Integration */}
         {businessLocation.city !== 'Unknown' && businessLocation.country !== 'Unknown' && (
           <div className="mt-4">
             <MapContainer
-              center={[business.location.coordinates[1], business.location.coordinates[0]]}
+              center={[service.business.location.coordinates[1], service.business.location.coordinates[0]]}
               zoom={13}
               scrollWheelZoom={false}
               className="w-full h-64 rounded-md"
@@ -349,7 +535,7 @@ const IndustrialOfferingDetails = () => {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
               />
-              <Marker position={[business.location.coordinates[1], business.location.coordinates[0]]}>
+              <Marker position={[service.business.location.coordinates[1], service.business.location.coordinates[0]]}>
                 <Popup>
                   {businessName} - {businessType}
                 </Popup>
