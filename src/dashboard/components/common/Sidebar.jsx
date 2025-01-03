@@ -140,7 +140,7 @@
 //     fetchData();
 //   }, []);
 
-  
+
 // 	if (loading) {
 // 	  return (
 // 		<div className="sidebar">
@@ -148,7 +148,7 @@
 // 		</div>
 // 	  );
 // 	}
-  
+
 // 	if (error) {
 // 	  return (
 // 		<div className="sidebar">
@@ -157,7 +157,7 @@
 // 	  );
 // 	}
 
-	
+
 // 	const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 // 	const [expandedMenu, setExpandedMenu] = useState(null);
 // 	const [expandedSubMenu, setExpandedSubMenu] = useState(null);
@@ -296,10 +296,11 @@
 
 
 
-
 // Sidebar.jsx
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useCookies } from 'react-cookie';
 import {
   BarChart2,
   DollarSign,
@@ -312,8 +313,11 @@ import {
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
+import { Oval } from "react-loader-spinner";
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
+
+// ... SIDEBAR_ITEMS definition remains the same
 
 const SIDEBAR_ITEMS = [
   {
@@ -384,8 +388,20 @@ const SIDEBAR_ITEMS = [
   },
 ];
 
+const deepCloneSidebarItems = (items) => {
+  return items.map(item => {
+    const newItem = { ...item };
+    if (item.submenu) {
+      newItem.submenu = deepCloneSidebarItems(item.submenu);
+    }
+    return newItem;
+  });
+};
+
 const Sidebar = () => {
-  // **1. Hook Declarations at the Top Level**
+  // Initialize react-cookie
+  const [cookies, setCookie, removeCookie] = useCookies(["token"]);
+
   const [filteredSidebar, setFilteredSidebar] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -394,66 +410,72 @@ const Sidebar = () => {
   const [expandedSubMenu, setExpandedSubMenu] = useState(null);
 
   const location = useLocation();
+  const token = cookies.token
 
-  // **2. Data Fetching with useEffect**
   useEffect(() => {
-    // Define your API endpoints
+
+
     const APIs = {
       industrialOffering: 'https://industradz-backend-new.onrender.com/api/service/allServices',
       industrialMachines: 'https://industradz-backend-new.onrender.com/api/machinery/allMachines',
-      spareParts: '/api/marketplace/spare-parts',
-      rawMaterials: '/api/marketplace/raw-materials',
+      spareParts: 'https://industradz-backend-new.onrender.com/api/spare-parts/allSpareParts',
+      rawMaterials: 'https://industradz-backend-new.onrender.com/api/raw-material/allRawMaterial',
     };
 
     const fetchData = async () => {
       try {
-        // Fetch Industrial Offering and Marketplace Sub-sections in parallel
+
+
+        if (!token) {
+          throw new Error('Authentication token not found.');
+        }
+
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
+
         const [
           industrialOfferingRes,
           industrialMachinesRes,
           sparePartsRes,
           rawMaterialsRes,
         ] = await Promise.all([
-          axios.get(APIs.industrialOffering),
-          axios.get(APIs.industrialMachines),
-          axios.get(APIs.spareParts),
-          axios.get(APIs.rawMaterials),
+          axios.get(APIs.industrialOffering, config),
+          axios.get(APIs.industrialMachines, config),
+          axios.get(APIs.spareParts, config),
+          axios.get(APIs.rawMaterials, config),
         ]);
+        console.log(industrialOfferingRes)
+        const hasIndustrialOffering = industrialOfferingRes.data.data.length > 0;
+        const hasIndustrialMachines = industrialMachinesRes.data.data.length > 0;
+        const hasSpareParts = sparePartsRes.data.data.length > 0;
+        const hasRawMaterials = rawMaterialsRes.data.data.length > 0;
 
-        // Determine the availability of each section/sub-section
-        const hasIndustrialOffering = industrialOfferingRes.data.length > 0;
-        const hasIndustrialMachines = industrialMachinesRes.data.length > 0;
-        const hasSpareParts = sparePartsRes.data.length > 0;
-        const hasRawMaterials = rawMaterialsRes.data.length > 0;
-
-        // Determine if Marketplace has any available sub-sections
+        console.log("Industrial offering:", hasIndustrialMachines)
         const hasMarketplace =
           hasIndustrialMachines || hasSpareParts || hasRawMaterials;
 
-        // Clone SIDEBAR_ITEMS to avoid mutating the original
-        let updatedSidebar = JSON.parse(JSON.stringify(SIDEBAR_ITEMS));
+          let updatedSidebar = deepCloneSidebarItems(SIDEBAR_ITEMS);
 
-        // Find the "Services" section
         const servicesSection = updatedSidebar.find(
           (item) => item.name === 'Services'
         );
 
         if (servicesSection) {
-          // **Filter "Industrials Offering"**
           if (!hasIndustrialOffering) {
             servicesSection.submenu = servicesSection.submenu.filter(
               (sub) => sub.name !== 'Industrials Offering'
             );
           }
 
-          // **Handle "Marketplace" based on sub-sections**
           const marketplaceSubmenu = servicesSection.submenu.find(
             (sub) => sub.name === 'Marketplace'
           );
 
           if (marketplaceSubmenu) {
             if (hasMarketplace) {
-              // Filter Marketplace's sub-submenus based on availability
               marketplaceSubmenu.submenu = marketplaceSubmenu.submenu.filter(
                 (sub) => {
                   if (sub.name === 'Industrial Machines')
@@ -464,14 +486,12 @@ const Sidebar = () => {
                 }
               );
             } else {
-              // If no Marketplace sub-sections have items, remove Marketplace
               servicesSection.submenu = servicesSection.submenu.filter(
                 (sub) => sub.name !== 'Marketplace'
               );
             }
           }
 
-          // **If "Services" has no submenus left, remove it**
           if (servicesSection.submenu.length === 0) {
             updatedSidebar = updatedSidebar.filter(
               (item) => item.name !== 'Services'
@@ -483,22 +503,30 @@ const Sidebar = () => {
         setLoading(false);
       } catch (err) {
         console.error('Error fetching sidebar data:', err);
-        setError('Failed to load sidebar data.');
+        setError(err.message || 'Failed to load sidebar data.');
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [token]);
 
-  // **3. Conditional Rendering for Loading and Error States**
   if (loading) {
     return (
-      <div className="sidebar">
-        <p>Loading...</p>
+      <div className="sidebar flex items-center justify-center h-full">
+        <Oval
+          height={50}
+          width={50}
+          color="#FF8806"
+          ariaLabel="loading"
+          secondaryColor="#c0c0c0"
+          strokeWidth={2}
+          strokeWidthSecondary={2}
+        />
       </div>
     );
   }
+  
 
   if (error) {
     return (
@@ -508,7 +536,6 @@ const Sidebar = () => {
     );
   }
 
-  // **4. Toggle Functions**
   const toggleMenu = (menuName) => {
     setExpandedMenu(expandedMenu === menuName ? null : menuName);
   };
@@ -517,12 +544,10 @@ const Sidebar = () => {
     setExpandedSubMenu(expandedSubMenu === subMenuName ? null : subMenuName);
   };
 
-  // **5. Render the Sidebar**
   return (
     <motion.div
-      className={`relative z-10 transition-all duration-300 ease-in-out flex-shrink-0 ${
-        isSidebarOpen ? 'w-64' : 'w-20'
-      }`}
+      className={`relative z-10 transition-all duration-300 ease-in-out flex-shrink-0 ${isSidebarOpen ? 'w-64' : 'w-20'
+        }`}
       animate={{ width: isSidebarOpen ? 256 : 80 }}
     >
       <div className="h-full backdrop-blur-md p-4 flex flex-col border-r">
@@ -539,9 +564,8 @@ const Sidebar = () => {
           {filteredSidebar.map((item) => (
             <div key={item.href}>
               <div
-                className={`flex items-center p-4 text-sm font-medium rounded-lg transition-colors mb-2 ${
-                  item.submenu ? 'justify-between' : ''
-                }`}
+                className={`flex items-center p-4 text-sm font-medium rounded-lg transition-colors mb-2 ${item.submenu ? 'justify-between' : ''
+                  }`}
               >
                 <Link to={item.href} className="flex items-center w-full">
                   <item.icon

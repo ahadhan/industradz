@@ -246,7 +246,7 @@ const IndustrialOfferings = () => {
             <Oval
               height={80}
               width={80}
-              color="#4fa94d"
+              color="#FF8806"
               wrapperStyle={{}}
               wrapperClass=""
               visible={true}
